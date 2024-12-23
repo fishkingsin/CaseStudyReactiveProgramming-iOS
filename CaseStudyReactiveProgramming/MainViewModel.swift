@@ -13,13 +13,26 @@ struct Article: Identifiable, Hashable, Equatable {
     var subtitle: String
 }
 
+class ArticlesRepository {
+    func fetchArticles() -> AnyPublisher<[Article], Never> {
+        Just([
+            Article(title: "SwiftUI", subtitle: "A SwiftUI framework"),
+            Article(title: "Combine", subtitle: "A SwiftUI framework"),
+            Article(title: "SwiftUI", subtitle: "A SwiftUI framework"),
+            Article(title: "Combine", subtitle: "A SwiftUI framework"),
+        ])
+        .delay(for: .milliseconds(100), scheduler: RunLoop.main)
+        .eraseToAnyPublisher()
+    }
+}
+
 class MainViewModel: ObservableObject {
     @Published var searchText: String = ""
     @Published var articles: [Article] = []
-    
-    private var serahPublisher: AnyPublisher<[Article], Never> {
+    let repository = ArticlesRepository()
+    private var searchPublisher: AnyPublisher<[Article], Never> {
         $searchText
-            .combineLatest(fetchArticlesPublisher())
+            .combineLatest(repository.fetchArticles())
             .debounce(for: .milliseconds(300), scheduler: RunLoop.main)
             .map { searchText, articles in
                 // Filter articles based on the search text
@@ -48,23 +61,12 @@ class MainViewModel: ObservableObject {
         
     }
     
-    func fetchArticlesPublisher() -> AnyPublisher<[Article], Never> {
-        Just([
-            Article(title: "SwiftUI", subtitle: "A SwiftUI framework"),
-            Article(title: "Combine", subtitle: "A SwiftUI framework"),
-            Article(title: "SwiftUI", subtitle: "A SwiftUI framework"),
-            Article(title: "Combine", subtitle: "A SwiftUI framework"),
-        ])
-        .delay(for: .milliseconds(100), scheduler: RunLoop.main)
-        .eraseToAnyPublisher()
-    }
-    
     init() {
         searchArticles()
     }
     
     private func searchArticles() {
-        serahPublisher
+        searchPublisher
             .receive(on: DispatchQueue.main) // Ensure UI updates happen on the main thread
             .sink(receiveCompletion: { completion in
                 // Handle errors in the pipeline
