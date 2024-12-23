@@ -8,14 +8,24 @@
 import SwiftUI
 
 struct ContentView: View {
+    @ObservedObject private var viewModel = MainViewModel()
     var body: some View {
         VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+            TextField("Search...", text: $viewModel.searchText)
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+                .padding()
+            List(viewModel.articles) { article in
+                VStack(alignment: .leading) {
+                    Text(article.title)
+                        .font(.headline)
+                    Text(article.subtitle)
+                        .font(.subheadline)
+                }
+            }
         }
-        .padding()
+        .onAppear {
+            viewModel.fetchArticles()
+        }
     }
 }
 
